@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Home Safety System</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#f4f6f8;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.main{display:flex;gap:20px;}
+
+.container,.panel,.controlPanel{
+  background:white;
+  padding:20px;
+  border-radius:15px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+.container{width:400px;}
+.panel{width:300px;max-height:80vh;overflow-y:auto;}
+.controlPanel{width:250px;}
+
+.appliance{
+  margin:10px 0;
+  padding:10px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:bold;
+}
+.on{background:#fdecea;color:#c82333;}
+.off{background:#e6f4ea;color:#1e7e34;}
+
+.statusBox{
+  margin-top:10px;
+  padding:10px;
+  border-radius:10px;
+  text-align:center;
+  font-weight:bold;
+}
+.safe{background:#e6f4ea;color:#1e7e34;}
+.risk{background:#f8d7da;color:#721c24;}
+
+.modeButton,.controlButton{
+  margin-top:10px;
+  padding:8px;
+  border-radius:8px;
+  cursor:pointer;
+  text-align:center;
+  font-weight:bold;
+}
+
+.modeButton{background:#d1ecf1;color:#0c5460;}
+.controlButton{background:#dc3545;color:white;}
+
+.notification{
+  background:#f1f1f1;
+  padding:8px;
+  margin-bottom:8px;
+  border-radius:8px;
+  font-size:14px;
+}
+.criticalNote{background:#f8d7da;color:#721c24;font-weight:bold;}
+.safeNote{background:#d4edda;color:#155724;font-weight:bold;}
+
+</style>
+</head>
+<body>
+
+<div class="main">
+
+<div class="container">
+<h2>🏠 Appliance Monitor</h2>
+
+<div id="iron" class="appliance off" onclick="toggle('iron')">🔥 Iron - OFF</div>
+<div id="geyser" class="appliance off" onclick="toggle('geyser')">♨️ Geyser - OFF</div>
+<div id="gas" class="appliance off" onclick="toggle('gas')">🔥 Gas - OFF</div>
+<div id="fan" class="appliance off" onclick="toggle('fan')">🌀 Fan - OFF</div>
+<div id="ac" class="appliance off" onclick="toggle('ac')">❄️ AC - OFF</div>
+
+<div id="statusBox" class="statusBox safe">
+✅ All appliances are safe.
+</div>
+
+<div id="modeToggle" class="modeButton" onclick="toggleMode()">
+🏠 Mode: HOME
+</div>
+
+</div>
+
+<div class="controlPanel">
+<h2>🎛️ Safety Control</h2>
+
+<div id="alertBtn" class="controlButton" onclick="sendAlert()" style="display:none;">
+🔔 Send Alert
+</div>
+
+<div id="shutdownBtn" class="controlButton" onclick="shutdownAll()" style="display:none;">
+🔒 Shutdown All
+</div>
+
+<div id="emergencyBtn" class="controlButton" onclick="emergencyShutdown()" style="display:none;">
+🚨 Emergency Shutdown
+</div>
+
+</div>
+
+<div class="panel">
+<h2>📱 Parent Notifications</h2>
+<div id="notificationList"></div>
+</div>
+
+</div>
+
+<script>
+
+let appliances={
+  iron:{status:false},
+  geyser:{status:false},
+  gas:{status:false},
+  fan:{status:false},
+  ac:{status:false}
+};
+
+let mode="HOME";
+
+function toggle(device){
+  appliances[device].status=!appliances[device].status;
+  updateUI();
+}
+
+function toggleMode(){
+  mode=mode==="HOME"?"AWAY":"HOME";
+  document.getElementById("modeToggle").innerHTML=
+    mode==="HOME"?"🏠 Mode: HOME":"🚪 Mode: AWAY";
+
+  updateUI();
+}
+
+function updateUI(){
+
+  let anyOn=false;
+
+  for(let d in appliances){
+    let el=document.getElementById(d);
+    if(appliances[d].status){
+      el.className="appliance on";
+      el.innerHTML=el.innerHTML.split("-")[0]+"- ON";
+      anyOn=true;
+    }else{
+      el.className="appliance off";
+      el.innerHTML=el.innerHTML.split("-")[0]+"- OFF";
+    }
+  }
+
+  if(anyOn){
+    document.getElementById("statusBox").className="statusBox risk";
+    document.getElementById("statusBox").innerHTML="⚠️ Risk Detected";
+  }else{
+    document.getElementById("statusBox").className="statusBox safe";
+    document.getElementById("statusBox").innerHTML="✅ All appliances are safe.";
+  }
+
+  // Show control panel buttons only in AWAY mode
+  if(mode==="AWAY" && anyOn){
+    document.getElementById("alertBtn").style.display="block";
+    document.getElementById("shutdownBtn").style.display="block";
+    document.getElementById("emergencyBtn").style.display="block";
+  }else{
+    document.getElementById("alertBtn").style.display="none";
+    document.getElementById("shutdownBtn").style.display="none";
+    document.getElementById("emergencyBtn").style.display="none";
+  }
+}
+
+function sendAlert(){
+  addNotification("Warning: Appliances are ON in AWAY mode.","critical");
+}
+
+function shutdownAll(){
+  for(let d in appliances){
+    appliances[d].status=false;
+  }
+  addNotification("All appliances safely shut down.","safe");
+  updateUI();
+}
+
+function emergencyShutdown(){
+  for(let d in appliances){
+    appliances[d].status=false;
+  }
+  addNotification("EMERGENCY SHUTDOWN ACTIVATED!","critical");
+  updateUI();
+}
+
+function addNotification(msg,type="critical"){
+  if(mode!=="AWAY") return;
+
+  let div=document.createElement("div");
+  div.className="notification "+(type==="safe"?"safeNote":"criticalNote");
+  div.innerHTML=new Date().toLocaleTimeString()+" - "+msg;
+  document.getElementById("notificationList").prepend(div);
+}
+
+</script>
+
+</body>
+</html>
